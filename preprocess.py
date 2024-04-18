@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 
-def deal_with_missing_points(temp_data_path,fever_start_data_path,cohort):
+def deal_with_missing_points(temp_data_path,cohort):
     '''
     This function deals with the missing data points (no nan recored in the file) in the temperature data.
     The function will fill the missing data points with nan and output the data to a csv file ("./full_ttemp.csv").
@@ -10,7 +10,6 @@ def deal_with_missing_points(temp_data_path,fever_start_data_path,cohort):
 
     Parameters:
     temp_data_path (str): The path to the temperature data file.
-    fever_start_data_path (str): The path to the fever start data file.
     cohort (str): The cohort to be analyzed ("HCT"or"CART").
 
     Returns:
@@ -27,16 +26,6 @@ def deal_with_missing_points(temp_data_path,fever_start_data_path,cohort):
     
     # make sure all the time points are even
     data["Time_DPI"] = data["Time_DPI"].round(0).apply(lambda x: x if x % 2 == 0 else x+1)
-    
-    # Load the data
-    fever_start = pd.read_csv(fever_start_data_path, sep=',')
-    
-    fever_start = fever_start[fever_start['Cohort'] == cohort]
-    fever_start = fever_start[["MaskID","Time_DPI"]]
-    fever_start["Time_DPI"] = fever_start["Time_DPI"]*24*60
-    
-    # make sure all the time points are even
-    fever_start["Time_DPI"] = fever_start["Time_DPI"].round(0).apply(lambda x: x if x % 2 == 0 else x+1)
 
     # reset the index
     data = data.reset_index(drop=True)
