@@ -18,6 +18,7 @@ def deal_with_missing_points(temp_data_path,cohort):
     final_df (pd.DataFrame): The data with missing points filled with nan and the original data positions recorded.
     
     '''
+    print("Start dealing with missing points...")
     # Load the data
     data = pd.read_csv(temp_data_path, sep=',')
 
@@ -55,6 +56,7 @@ def deal_with_missing_points(temp_data_path,cohort):
 
     # output the data
     final_df.to_csv("../full_ttemp.csv", index=False)
+    print("Finish dealing with missing points!")
 
     return final_df
 
@@ -108,10 +110,94 @@ def preprocess(filled_temp_data,fever_start_data_path,cohort):
 
     return filled_temp_data
 
+
+def filter_data(data,before,after,original_percent_threshold,fever_cause_data_path):
+    '''
+    This function picks up the data with fever event hours before and after and filter out the data that has more than 70% original data.
+    The function will also convert the fever causes to binary labels, infection:1, non-infection/unclear:0.
+
+    Parameters:
+    data (pd.DataFrame): The preprocessed data.
+    before (int): The hours before the fever event.
+    after (int): The hours after the fever event.
+    original_percent_threshold (float): The threshold of the percentage of original data (0-1).
+    fever_cause_data_path (str): The path to the fever cause data file.
+
+    Returns:
+    temp_array (np.array): The input data for clustering.
+    qualified_temp_label (list): The fever event label in (maskid, days after infusion) format.
+    qualified_temp_percent (list): The percentage of original data.
+    true_label (np.array): The binary labels for fever causes.
+    qualified_fever_causes (pd.Series): The fever causes.
+    '''
+    print("Start picking up and filtering the data...")
+    print(f"{before} hours before and {after} hours after fever event:")
+    
+    # pick the data with fever event hours before and after
+    temp_list = []
+    fever_event_label = []
+    original_data = []
+    
+    for i in range(len(data)):
+        # find the fever event and the time have to be with in 30 days
+        if data.iloc[i,3] == 1 and data.iloc[i,1] < 30*1440:
+            temp_list.append(list(data.iloc[i-before*30:i+after*30,2]))
+            # record the original data positions
+            original_data.append(list(data.iloc[i-before*30:i+after*30,5]))
+            # record the fever event label in (maskid, days after infusion) format
+            fever_event_label.append((data.iloc[i,0],round(data.iloc[i,1]/1440,3)))
+
+    # calculate the percentage of original data
+    original_percent = []
+    for original in original_data:
+        percent = round(sum(original)/len(original),4)
+        original_percent.append(percent)
+
+    # filter out the data that has more than 70% original data
+    qualified_temp_data = []
+    qualified_temp_label = []
+    qualified_temp_percent = []
+    
+    for i,percent in enumerate(original_percent):
+        if percent >= original_percent_threshold:
+            qualified_temp_percent.append(percent)
+            qualified_temp_data.append(temp_list[i])
+            qualified_temp_label.append(fever_event_label[i])
+
+    result = pd.read_csv(fever_cause_data_path, sep=',')
+    result = result[['PatientID','MaskID','Time_DPI','Category']]
+
+    qualified_fever_causes = result["Category"]
+
+    # convert the fever causes to binary labels, infection:1, non-infection/unclear:0
+    true_label = []
+    for i in qualified_fever_causes:
+        if i == "infection":
+            true_label.append(1)
+        else:
+            true_label.append(0)
+    true_label = np.array(true_label)
+    
+    # check the length of the data
+    print(f'Check data length before clustering: {len(qualified_temp_data) == len(qualified_temp_label) == len(qualified_temp_percent) == len(qualified_fever_causes)}')
+
+    temp_array = np.array(qualified_temp_data)
+    print(f'The data size for clustering is {temp_array.shape}.')
+    print("Finish picking up and filtering the data!")
+
+    return temp_array, qualified_temp_label, qualified_temp_percent, true_label, qualified_fever_causes
+
 if __name__ == "__main__":
+    
     temp_data_path = "../input/TempTraq_Dataset.csv"
     fever_start_data_path = "../input/TFeverStarts.csv"
+    fever_cause_data_path = "../input/4-17-19_With_PHI_HCT_result_with_exact_time_clinical_categories.csv"
     cohort = "HCT"
+    before = 4
+    after = 4
+    original_percent_threshold = 0.7
+
     temp_df = deal_with_missing_points(temp_data_path,cohort)
     temp_df = preprocess(temp_df,fever_start_data_path,cohort)
+    temp_array, qualified_temp_label, qualified_temp_percent, true_label, qualified_fever_causes = filter_data(temp_df,before,after,original_percent_threshold,fever_cause_data_path)
     print("Done!")
