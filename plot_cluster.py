@@ -76,7 +76,7 @@ def DTW_KMeans_clustering(train_data, cluster_number,seed = 10):
                             random_state=seed)
     prediect_result = km.fit_predict(train_data)
     # print silhouette score
-    print("DBA silhouette: {:.2f}".format(silhouette_score(train_data, prediect_result, metric="dtw")))
+    print("silhouette score: {:.2f}".format(silhouette_score(train_data, prediect_result, metric="dtw")))
     
     x = np.arange(-train_data.shape[1],train_data.shape[1],2).reshape(-1,1)
 
