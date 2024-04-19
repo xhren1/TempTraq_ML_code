@@ -5,7 +5,7 @@ from tslearn.clustering import TimeSeriesKMeans
 import matplotlib.pyplot as plt
 
 
-def data_plot (train_data,label):
+def data_plot(train_data,label):
     '''
     Plot the data before clustering.
     
@@ -76,7 +76,8 @@ def DTW_KMeans_clustering(train_data, cluster_number,seed = 10):
                             random_state=seed)
     prediect_result = km.fit_predict(train_data)
     # print silhouette score
-    print("silhouette score: {:.2f}".format(silhouette_score(train_data, prediect_result, metric="dtw")))
+    silhouette = silhouette_score(train_data, prediect_result, metric="dtw")
+    # print("silhouette score: {:.2f}".format(silhouette))
     
     x = np.arange(-train_data.shape[1],train_data.shape[1],2).reshape(-1,1)
 
@@ -102,4 +103,4 @@ def DTW_KMeans_clustering(train_data, cluster_number,seed = 10):
 
     plt.tight_layout()
 
-    return prediect_result, km.cluster_centers_, km
+    return prediect_result, km.cluster_centers_, km, silhouette

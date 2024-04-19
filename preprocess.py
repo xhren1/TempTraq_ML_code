@@ -55,13 +55,14 @@ def deal_with_missing_points(temp_data_path,cohort):
     final_df["Orignial_data"]= ~final_df["TTemp"].isna().astype(int) + 2
 
     # output the data
-    final_df.to_csv("../full_ttemp.csv", index=False)
+    final_df.to_csv("./full_ttemp.csv", index=False)
     print("Finish dealing with missing points!")
+    print('-'*80)
 
     return final_df
 
 
-def preprocess(filled_temp_data,fever_start_data_path,cohort):
+def interpolation_smooth(filled_temp_data,fever_start_data_path,cohort):
     '''
     This function preprocess the temperature data by interpolating the missing data points and smoothing the data.
     The function will also mark the fever start points in the data.
@@ -107,6 +108,7 @@ def preprocess(filled_temp_data,fever_start_data_path,cohort):
     print("fever start number check:")
     print(filled_temp_data[filled_temp_data["fever_start"] == 1].shape[0] == fever_start.shape[0])
     print("Finish preprocessing the data!")
+    print('-'*80)
 
     return filled_temp_data
 
@@ -131,7 +133,7 @@ def filter_data(data,before,after,original_percent_threshold,fever_cause_data_pa
     qualified_fever_causes (pd.Series): The fever causes.
     '''
     print("Start picking up and filtering the data...")
-    print(f"{before} hours before and {after} hours after fever event:")
+    print(f"{before} hours before and {after} hours after fever event was chosen.")
     
     # pick the data with fever event hours before and after
     temp_list = []
@@ -182,8 +184,10 @@ def filter_data(data,before,after,original_percent_threshold,fever_cause_data_pa
     print(f'Check data length before clustering: {len(qualified_temp_data) == len(qualified_temp_label) == len(qualified_temp_percent) == len(qualified_fever_causes)}')
 
     temp_array = np.array(qualified_temp_data)
-    print(f'The data size for clustering is {temp_array.shape}.')
+    
     print("Finish picking up and filtering the data!")
+    print('-'*80)
+    print(f'The data size for clustering is {temp_array.shape}.')
 
     return temp_array, qualified_temp_label, qualified_temp_percent, true_label, qualified_fever_causes
 
@@ -198,6 +202,6 @@ if __name__ == "__main__":
     original_percent_threshold = 0.7
 
     temp_df = deal_with_missing_points(temp_data_path,cohort)
-    temp_df = preprocess(temp_df,fever_start_data_path,cohort)
+    temp_df = interpolation_smooth(temp_df,fever_start_data_path,cohort)
     temp_array, qualified_temp_label, qualified_temp_percent, true_label, qualified_fever_causes = filter_data(temp_df,before,after,original_percent_threshold,fever_cause_data_path)
     print("Done!")
