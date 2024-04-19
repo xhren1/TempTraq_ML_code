@@ -1,6 +1,6 @@
 # TempTraq_ML_code
 ## Input files
-### Data files may contain patients' PHI data. If you want to have the data files, please contact the first author or the corresponding author.
+### Data files may contain patients' PHI information. If you want to have the data files, please contact the first author or the corresponding author.
 ### 1. TempTraq temperature data file (csv) - must have the following columns
       a. Cohort – study population (HCT or CART)
       b. MaskID – Masked ID
