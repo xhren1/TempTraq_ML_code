@@ -3,15 +3,15 @@ from plot_cluster import *
 from sklearn.metrics import roc_curve, auc
 
 # Parameters   
-temp_data_path = "../input/TempTraq_Dataset.csv"
-fever_start_data_path = "../input/TFeverStarts.csv"
-fever_cause_data_path = "../input/4-17-19_With_PHI_HCT_result_with_exact_time_clinical_categories.csv"
+temp_data_path = "[Please input your path to the temperature data file here]"
+fever_start_data_path = "[Please input your path to the fever start data file here]"
+fever_cause_data_path = "[Please input your path to the fever cause data file here]"
 cohort = "HCT"
 before = 4
 after = 4
 original_percent_threshold = 0.7
 cluster_number = 3
-missing_points = False # True: deal with missing points(for the first time run), False: not deal with missing points(if you have a full_ttemp.csv file in the current directory)
+missing_points = True # True: deal with missing points(for the first time run), False: not deal with missing points(if you have a full_ttemp.csv file in the current directory)
 
 # Load the data
 if missing_points:

@@ -167,7 +167,7 @@ def filter_data(data,before,after,original_percent_threshold,fever_cause_data_pa
             qualified_temp_label.append(fever_event_label[i])
 
     result = pd.read_csv(fever_cause_data_path, sep=',')
-    result = result[['PatientID','MaskID','Time_DPI','Category']]
+    result = result[['MaskID','Time_DPI','Category']]
 
     qualified_fever_causes = result["Category"]
 
