@@ -1,5 +1,6 @@
 # TempTraq_ML_code
 ## Input files
+### Data files may contain patients' PHI data. If you want to have the data files, please contact the first author or the corresponding author.
 ### 1. TempTraq temperature data file (csv) - must have the following columns
       a. Cohort – study population (HCT or CART)
       b. MaskID – Masked ID
@@ -49,5 +50,5 @@ python main.py
       b. Time_DPI – Time masked as Minutes Post-Infusion
       c. Category - Clinically determined fever causes
       d. cluster result - cluster result in number
-### plots in .svg format
+### 3. plots in .svg format
       
