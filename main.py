@@ -81,8 +81,30 @@ for i,label in enumerate(predict_label):
 result = pd.DataFrame({'MaskID':[i for (i,j) in qualified_temp_label], 'Time_DPI':[j for (i,j) in qualified_temp_label], 'Category': qualified_fever_causes, 'cluster result':predict_label+1})
 result.to_csv("./result.csv", index=False)
 
+# plot the number of fever events in each cluster(non-infection adn unclear seperated)(change with the result of your clustering)
+plt.rcParams['figure.figsize'] = [20, 4]
+fig, axs = plt.subplots(1,len(cluster_result.keys()))
+#display the detail of each cluster
+for key in range(len(cluster_result.keys())):
+    
+    # plot the number of fever events in each cluster with bar chart
+    index_all = ['non-infection','infection', 'unclear']
+    index = result[result['cluster result']==key+1]['Category'].value_counts().index
+    value = result[result['cluster result']==key+1]['Category'].value_counts().values
+    
+
+    plt.subplot(1,len(cluster_result.keys()),key+1)
+    plt.bar(index,value)
+    plt.xlabel('Fever causes')
+    plt.ylabel('Number of fever events')
+    plt.ylim(0, 7.5)
+    plt.title('Number of fever events in cluster {}'.format(key+1))
+
+plt.savefig('./with_unclear_fever_causes.svg', format='svg')    
+plt.close()
 
 # plot the number of fever events in each cluster(non-infection adn unclear seperated)(to make the plot in the same sequence, I count the fever events in each cluster)
+# please change the value if you are doing a different clustering
 plt.rcParams['figure.figsize'] = [20, 4]
 fig, axs = plt.subplots(1,len(cluster_result.keys()))
 #display the detail of each cluster
@@ -103,33 +125,11 @@ for key in range(len(value)):
     plt.ylim(0, 9.5)
     plt.title('Number of fever events in cluster {}'.format(key+1))
     
-plt.savefig('./with_unclear_fever_causes.svg', format='svg')
+plt.savefig('./with_unclear_fever_causes_colored_version.svg', format='svg')
 plt.close()
 
 
-# plot the number of fever events in each cluster(non-infection and unclear combined)(to make the plot in the same sequence, I count the fever events in each cluster)
-plt.rcParams['figure.figsize'] = [20, 4]
-fig, axs = plt.subplots(1,len(cluster_result.keys()))
-#display the detail of each cluster
-color = ['cornflowerblue','sandybrown']
-index_all = ['non-infection','infection']
 
-###********** change it if you are doing a different clustering *********
-value = [[0,7],[5,3],[9,6]]
-
-for key in range(len(value)):
-    
-    # plot the number of fever events in each cluster with bar char
-
-    plt.subplot(1,len(cluster_result.keys()),key+1)
-    plt.bar(index_all,value[key],color=color)
-    plt.xlabel('Fever causes')
-    plt.ylabel('Number of fever events')
-    plt.ylim(0, 9.5)
-    plt.title('Number of fever events in cluster {}'.format(key+1))
-    
-plt.savefig('./fever_causes_non-infection_unclear_combined.svg', format='svg')
-plt.close()
 
 # t-test for the number of fever events in each cluster with random clustering
 # print("T-test for the number of fever events in each cluster with random clustering...")
