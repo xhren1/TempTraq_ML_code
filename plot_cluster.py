@@ -63,7 +63,7 @@ def DTW_KMeans_clustering(train_data, cluster_number,seed = 10):
         seed (int): random seed
         
     Returns:
-        prediect_result (np.array): the cluster labels for each data point
+        predict_result (np.array): the cluster labels for each data point
         km.cluster_centers_ (np.array): the cluster centers
         km (TimeSeriesKMeans): the clustering model
     '''
@@ -74,9 +74,9 @@ def DTW_KMeans_clustering(train_data, cluster_number,seed = 10):
                             verbose=False,
                             max_iter_barycenter=10,
                             random_state=seed)
-    prediect_result = km.fit_predict(train_data)
+    predict_result = km.fit_predict(train_data)
     # print silhouette score
-    silhouette = silhouette_score(train_data, prediect_result, metric="dtw")
+    silhouette = silhouette_score(train_data, predict_result, metric="dtw")
     # print("silhouette score: {:.2f}".format(silhouette))
     
     x = np.arange(-train_data.shape[1],train_data.shape[1],2).reshape(-1,1)
@@ -84,7 +84,7 @@ def DTW_KMeans_clustering(train_data, cluster_number,seed = 10):
     for i in range(cluster_number):
         plt.subplot(3, cluster_number, i+1)
         # plot all the patient temperature curves
-        for j in train_data[prediect_result == i]:
+        for j in train_data[predict_result == i]:
             plt.plot(x, j.ravel(), "k-", alpha=.25)
         # plot the cluster center in blue
         plt.plot(x, km.cluster_centers_[i].ravel(), "blue")
@@ -103,4 +103,4 @@ def DTW_KMeans_clustering(train_data, cluster_number,seed = 10):
 
     plt.tight_layout()
 
-    return prediect_result, km.cluster_centers_, km, silhouette
+    return predict_result, km.cluster_centers_, km, silhouette
