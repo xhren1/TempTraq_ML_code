@@ -93,13 +93,10 @@ def DTW_KMeans_clustering(train_data, cluster_number,seed = 10):
         plt.ylim(34, 41)
         plt.axhline(y=38, color='red', linestyle='--',lw=0.8)
         plt.axvline(x=0, color='green', linestyle='--',lw=0.8)
-        
-        plt.text(0.55, 0.85,'Cluster %d' % (i + 1),
-                transform=plt.gca().transAxes, size=14)
-
-        ax = plt.gca()
-        ax.tick_params(axis='x', labelsize=16)
-        ax.tick_params(axis='y', labelsize=16)
+        if i == 0:
+            plt.ylabel("Temperature (°C)")
+        if i == int(cluster_number/2):
+            plt.xlabel("Time after infusion (min)")
 
     plt.tight_layout()
 
