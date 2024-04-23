@@ -1,17 +1,22 @@
 from preprocess import *
 from plot_cluster import *
-from sklearn.metrics import roc_curve, auc
+from stat_test import *
+from scipy.stats import chi2_contingency
 
 # Parameters   
 temp_data_path = "[Please input your path to the temperature data file here]"
 fever_start_data_path = "[Please input your path to the fever start data file here]"
 fever_cause_data_path = "[Please input your path to the fever cause data file here]"
+temp_data_path = "../input/TempTraq_Dataset.csv"
+fever_start_data_path = "../input/TFeverStarts.csv"
+fever_cause_data_path = "../input/4-17-19_With_PHI_HCT_result_with_exact_time_clinical_categories.csv"
 cohort = "HCT"
 before = 4
 after = 4
 original_percent_threshold = 0.7
 cluster_number = 3
-missing_points = True # True: deal with missing points(for the first time run), False: not deal with missing points(if you have a full_ttemp.csv file in the current directory)
+missing_points = False # True: deal with missing points(for the first time run), False: not deal with missing points(if you have a full_ttemp.csv file in the current directory)
+num_iterations = 200
 
 # Load the data
 if missing_points:
@@ -40,34 +45,13 @@ plt.close()
 # clustering
 print("Clustering...")
 print(f"Cluster number: {cluster_number}")
-plt.rcParams['figure.figsize'] = [20, 6.4]
+plt.rcParams['figure.figsize'] = [14, 6]
 predict_label,cluster_centers,model,silhouette = DTW_KMeans_clustering(train_data= temp_array, cluster_number=cluster_number,seed=10)
 print("silhouette score: {:.2f}".format(silhouette))
 plt.savefig('./with_unclear_fevers_cluster_result.svg', format='svg')
 plt.close()
 
-# ROC curve is not designed for clustering, but we can use it to evaluate the clustering result
-# because 0 is non-infection and 1 is infection, we need to make cluster with the most infection to the largest number to draw the ROC curve
-# make all 0 to 3
-predict_label[predict_label == 0] = 3
-predict_label
-
 print("Plot the results...")
-fpr, tpr, _ = roc_curve(true_label, predict_label)
-roc_auc = auc(fpr, tpr)
-plt.rcParams['figure.figsize'] = [10, 10]
-plt.figure()
-plt.plot(fpr, tpr, color='darkorange', lw=4, label='ROC curve (area = %0.2f)' % roc_auc)
-plt.plot([0, 1], [0, 1], color='navy', lw=3, linestyle='--')
-plt.axvline(x=0.6, ymin=1, color='red', linestyle='--',lw=0.8)
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('1 - Specificity')
-plt.ylabel('Senstivity')
-plt.title('Receiver Operating Characteristic (ROC)')
-plt.legend(loc="lower right")
-plt.savefig('./with_unclear_ROC.svg', format='svg')
-plt.close()
 
 # combine the cluster result with the fever causes
 cluster_result ={}
@@ -81,58 +65,137 @@ for i,label in enumerate(predict_label):
 result = pd.DataFrame({'MaskID':[i for (i,j) in qualified_temp_label], 'Time_DPI':[j for (i,j) in qualified_temp_label], 'Category': qualified_fever_causes, 'cluster result':predict_label+1})
 result.to_csv("./result.csv", index=False)
 
-# plot the number of fever events in each cluster(non-infection adn unclear seperated)(change with the result of your clustering)
-plt.rcParams['figure.figsize'] = [20, 4]
-fig, axs = plt.subplots(1,len(cluster_result.keys()))
-#display the detail of each cluster
-for key in range(len(cluster_result.keys())):
-    
-    # plot the number of fever events in each cluster with bar chart
-    index_all = ['non-infection','infection', 'unclear']
-    index = result[result['cluster result']==key+1]['Category'].value_counts().index
-    value = result[result['cluster result']==key+1]['Category'].value_counts().values
-    
+# plot the number of fever events in each cluster
+plt.rcParams['figure.figsize'] = [14, 6]
+# Data
+infection_cases = []
+non_infection_cases = []
+unclear_cases = []
 
-    plt.subplot(1,len(cluster_result.keys()),key+1)
-    plt.bar(index,value)
-    plt.xlabel('Fever causes')
-    plt.ylabel('Number of fever events')
-    plt.ylim(0, 7.5)
-    plt.title('Number of fever events in cluster {}'.format(key+1))
+for i in range(cluster_number):
+    infection_cases.append(list(result[result['cluster result']==i+1]['Category']).count("infection"))
+    non_infection_cases.append(list(result[result['cluster result']==i+1]['Category']).count("Other Adverse Event"))
+    unclear_cases.append(list(result[result['cluster result']==i+1]['Category']).count("unclear"))
+    
+# Creating subplots with stacked bars for non-infection cases
+fig, axs = plt.subplots(1, cluster_number, figsize=(12, 4), sharey=True)
 
-plt.savefig('./with_unclear_fever_causes.svg', format='svg')    
+# Plotting data with new stacked bar for unclear cases
+for i, ax in enumerate(axs):
+    ax.bar('Infection', infection_cases[i], color='blue', label='Infection' if i == 0 else "")
+    ax.bar('Non-infection', non_infection_cases[i], color='orange', label='Non-infection' if i == 0 else "")
+    ax.bar('Non-infection', unclear_cases[i], color='green', bottom=non_infection_cases[i], label='Unclear' if i == 0 else "")
+    if i == 0:
+        ax.set_ylabel('Number of Cases')
+    if i == int((cluster_number)/2):
+        ax.set_xlabel('Fever Causes')
+    ax.set_title(f'cluster {i+1}')
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5, axis='y')
+
+# Adding a legend to explain the colors
+fig.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+plt.tight_layout()
+#save the figure with legend inside
+plt.savefig('./with_unclear_fever_causes.svg', format='svg',bbox_inches='tight')
+
 plt.close()
-
-# plot the number of fever events in each cluster(non-infection adn unclear seperated)(to make the plot in the same sequence, I count the fever events in each cluster)
-# please change the value if you are doing a different clustering
-plt.rcParams['figure.figsize'] = [20, 4]
-fig, axs = plt.subplots(1,len(cluster_result.keys()))
-#display the detail of each cluster
-color = ['cornflowerblue','sandybrown','lightcoral']
-index_all = ['non-infection','infection', 'unclear']
-
-###********** change it if you are doing a different clustering *********
-value = [[0,7,0],[4,3,1],[4,6,5]]
-
-for key in range(len(value)):
-    
-    # plot the number of fever events in each cluster with bar char
-
-    plt.subplot(1,len(cluster_result.keys()),key+1)
-    plt.bar(index_all,value[key],color=color)
-    plt.xlabel('Fever causes')
-    plt.ylabel('Number of fever events')
-    plt.ylim(0, 9.5)
-    plt.title('Number of fever events in cluster {}'.format(key+1))
-    
-plt.savefig('./with_unclear_fever_causes_colored_version.svg', format='svg')
-plt.close()
-
-
-
 
 # t-test for the number of fever events in each cluster with random clustering
-# print("T-test for the number of fever events in each cluster with random clustering...")
+print("*"*80)
+print("T-test for silhouette scores and accuracy between random clustering and DTW-KMeans clustering...")
+
+
+stat_results = Parallel(n_jobs=-1)(delayed(compute_silhouette_and_accuracy)(i,temp_array,true_label,cluster_number) for i in range(num_iterations))
+
+model_silhouette = []
+random_silhouette = []
+model_acc = []
+random_acc = []
+for model_score, random_score,model_accuracy,random_accuracy in stat_results:
+    model_silhouette.append(model_score)
+    random_silhouette.append(random_score)
+    model_acc.append(model_accuracy)
+    random_acc.append(random_accuracy)
+
+# Plot the silhouette score distribution
+plt.rcParams['figure.figsize'] = [8, 4.5]
+plt.hist(model_silhouette, bins=10, alpha=0.5, label='Model')
+plt.ylabel('Frequency')
+plt.xlabel('Silhouette Score')
+plt.title('Model Silhouette Score Distribution')
+plt.savefig('./model_silhouette_score_histgram.svg', format='svg')
+plt.close()
+
+#qq plot
+stats.probplot(model_silhouette, dist="norm", plot=plt)
+plt.title('Model Silhouette Score Q-Q Plot')
+plt.savefig('./model_silhouette_score_qq_plot.svg', format='svg')
+plt.close()
+
+plt.hist(random_silhouette, bins=10, alpha=0.5, label='Model')
+plt.ylabel('Frequency')
+plt.xlabel('Silhouette Score')
+plt.title('Random Silhouette Score Distribution')
+plt.savefig('./random_silhouette_score_histgram.svg', format='svg')
+plt.close()
+
+#qq plot
+stats.probplot(random_silhouette, dist="norm", plot=plt)
+plt.title('Random Silhouette Score Q-Q Plot')
+plt.savefig('./random_silhouette_score_qq_plot.svg', format='svg')
+plt.close()
+
+t_statistic, p_value = stats.ttest_ind(model_silhouette, random_silhouette)
+print("Silhouette score t-test:")
+print(f"t-statistic: {t_statistic}, p-value: {p_value}")
+print("-"*80)
+
+# Plot the accuracy distribution
+plt.rcParams['figure.figsize'] = [8, 4.5]
+plt.hist(model_acc, bins=7, alpha=0.5, label='Model')
+plt.ylabel('Frequency')
+plt.xlabel('Accuracy Score')
+plt.title('Model Accuracy Score Distribution')
+plt.savefig('./model_accuracy_score_histgram.svg', format='svg')
+plt.close()
+
+# qq plot
+stats.probplot(model_acc, dist="norm", plot=plt)
+plt.title('Model Accuracy Score Q-Q Plot')
+plt.savefig('./model_accuracy_score_qq_plot.svg', format='svg')
+plt.close()
+
+plt.hist(random_acc, bins=7, alpha=0.5, label='Model')
+plt.ylabel('Frequency')
+plt.xlabel('Accuracy Score')
+plt.title('Random Accuracy Score Distribution')
+plt.savefig('./random_accuracy_score_histgram.svg', format='svg')
+plt.close()
+
+# qq plot
+stats.probplot(random_acc, dist="norm", plot=plt)
+plt.title('Random Accuracy Score Q-Q Plot')
+plt.savefig('./random_accuracy_score_qq_plot.svg', format='svg')
+plt.close()
+
+t_statistic, p_value = stats.ttest_ind(model_acc, random_acc)
+print("Accuracy t-test:")
+print(f"t-statistic: {t_statistic}, p-value: {p_value}")
+print("-"*80)
+
+
+observed = []
+for i in range(cluster_number):
+    observed.append([sum(true_label[predict_label == i] == 1),sum(true_label[predict_label == i] == 0)])
+observed = np.array(observed).transpose()
+
+chi2_stat, p_value, dof, expected = chi2_contingency(observed)
+
+print("Chi-square Test for the number of fever causes in each cluster:")
+print("Chi-square Statistic:", chi2_stat)
+print("P-value:", p_value)
+print("Degrees of Freedom:", dof)
 
 
 print("Done!")
