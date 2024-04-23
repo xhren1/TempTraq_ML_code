@@ -5,3 +5,4 @@ scipy
 tqdm
 scikit-learn
 tslearn==0.6.1
+h5py
