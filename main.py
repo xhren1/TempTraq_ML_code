@@ -7,16 +7,13 @@ from scipy.stats import chi2_contingency
 temp_data_path = "[Please input your path to the temperature data file here]"
 fever_start_data_path = "[Please input your path to the fever start data file here]"
 fever_cause_data_path = "[Please input your path to the fever cause data file here]"
-temp_data_path = "../input/TempTraq_Dataset.csv"
-fever_start_data_path = "../input/TFeverStarts.csv"
-fever_cause_data_path = "../input/4-17-19_With_PHI_HCT_result_with_exact_time_clinical_categories.csv"
-cohort = "HCT"
-before = 4
-after = 4
-original_percent_threshold = 0.7
+cohort = "HCT" # HCT or CART
+before = 4 # the number of hours before fever event
+after = 4 # the number of hours after fever event
+original_percent_threshold = 0.7 # the threshold of the percentage of original data
 cluster_number = 3
-missing_points = False # True: deal with missing points(for the first time run), False: not deal with missing points(if you have a full_ttemp.csv file in the current directory)
-num_iterations = 200
+missing_points = True # True: deal with missing points(for the first time run), False: not deal with missing points(if you have a full_ttemp.csv file in the current directory)
+num_iterations = 200 # number of iterations for statistical test
 
 # Load the data
 if missing_points:
